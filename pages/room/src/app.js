@@ -3,14 +3,16 @@ const onload = () => {
   const room = urlParams.get('room');
   console.log('this is the room', room)
   
-  const socketUrl = 'http://localhost:3000'
+  const socketUrl = 'https://polar-island-03343.herokuapp.com/'
   const socketBuilder = new SocketBuilder({socketUrl})
 
   const peerConfig = Object.values({
     id: undefined, 
     config: {
-      port: 9000,
-      host: 'localhost',
+      host: 'sheltered-wave-21810.herokuapp.com',
+      secure: true,
+      // port: 9000,
+      // host: 'localhost',
       path: '/'
     }
   })
