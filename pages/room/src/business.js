@@ -23,6 +23,7 @@ class Business {
     
     async _init() {
         this.view.configureRecordButton(this.onRecordPressed.bind(this))
+        this.view.configureLeaveButton(this.onLeavePressed.bind(this))
         
         this.currentStream = await this.media.getCamera()
         this.socket = this.socketBuilder
@@ -49,7 +50,7 @@ class Business {
         if(this.recordingEnabled) {
             recorderInstance.startRecording()
         }
-        const isCurrentId = false
+        const isCurrentId = userId === this.currentPeer.id
         this.view.renderVideo({
             userId,
             muted: false,
@@ -75,6 +76,7 @@ class Business {
             }
 
             this.view.setParticipants(this.peers.size)
+            this.stopRecording(userId)
             this.view.removeVideoElement(userId)
         }
     }
@@ -103,6 +105,10 @@ class Business {
     onPeerStreamReceived = function() {
         return (call, stream) => {
             const callerId = call.peer
+            if(this.peers.has(callerId)) {
+                console.log('calling twice, ignoring second call...', callerId)
+                return;
+            }
             this.addVideoStream(callerId, stream)
             this.peers.set(callerId, { call })
             this.view.setParticipants(this.peers.size)
@@ -136,9 +142,9 @@ class Business {
 
     // se um usuario entrar e sair da call durante uma gravação
     // precisamos parar as gravações anteriores dele
-    async stopRecording(key) {
+    async stopRecording(userId) {
         const usersRecordings = this.usersRecordings
-        for( const [key, value] of this.usersRecordings) {
+        for( const [key, value] of usersRecordings) {
             const isContextUser = key.includes(userId)
             if(!isContextUser) continue
 
@@ -147,6 +153,19 @@ class Business {
             if(!isRecordingActive) continue;
 
             await rec.stopRecording()
+            this.playRecordings(key)
         }
+    }
+
+    playRecordings(userId) {
+        const user = this.usersRecordings.get(userId)
+        const videosURLs = user.getAllVideoURLs()
+        videosURLs.map(url => {
+            this.view.renderVideo({ url, userId })
+        })
+    }
+
+    onLeavePressed() {
+        this.usersRecordings.forEach((value, key) => value.download())
     }
 }
